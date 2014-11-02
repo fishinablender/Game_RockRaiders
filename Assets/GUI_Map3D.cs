@@ -9,6 +9,13 @@ public class GUI_Map3D : MonoBehaviour
     public Controller con;
     public MapSpace[,] map;
 
+    public Texture[] textures = new Texture[9];
+
+    private List<GameObject> movingTiles = new List<GameObject>();
+    private Vector2 curOffset;
+
+
+
     // Use this for initialization
     void Start()
     {
@@ -17,8 +24,27 @@ public class GUI_Map3D : MonoBehaviour
         con = gameObject.GetComponent<Controller>() as Controller;
         map = con.map.grid;
 
+        //set shared materials
+        SetTextures();
+
         // build 3d map
         BuildMap();
+
+    }
+
+    private void SetTextures()
+    {
+
+        // Sets textures
+        textures[0] = Resources.Load("Textures/Ground") as Texture;
+        textures[1] = Resources.Load("Textures/Water") as Texture;
+        textures[2] = Resources.Load("Textures/Lava") as Texture;
+        textures[3] = Resources.Load("Textures/Rubble") as Texture;
+        textures[4] = Resources.Load("Textures/Loose") as Texture;
+        textures[5] = Resources.Load("Textures/OreSeam") as Texture;
+        textures[6] = Resources.Load("Textures/CrystalSeam") as Texture;
+        textures[7] = Resources.Load("Textures/Hard") as Texture;
+        textures[8] = Resources.Load("Textures/Solid") as Texture;
 
     }
 
@@ -33,26 +59,42 @@ public class GUI_Map3D : MonoBehaviour
         //temp cube tile holder
         GameObject cube;
 
+
+
+
+
         // Build Ground Tiles
         for (int y = 0; y < map.GetLength(1); y++)
         {
             for (int x = 0; x < map.GetLength(0); x++)
             {
+
                 cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.tag = "Ground";
+                cube.transform.name = x + "," + y +",Ground";
+                
 
                 switch (map[x, y].rock)
                 {
-                    case rockType.LAVA:
-                        //cube.renderer.sharedMaterial.mainTexture = Resources.Load("Textures/Lava") as Texture;
-                        cube.renderer.material.mainTexture = Resources.Load("Textures/Lava") as Texture;
-                        break;
                     case rockType.WATER:
-                        cube.renderer.material.mainTexture = Resources.Load("Textures/Water") as Texture;
+                        cube.renderer.material.mainTexture = textures[1];
+                        movingTiles.Add(cube);
+                        break;
+                    case rockType.LAVA:
+                        // add light
+                        GameObject light = new GameObject();
+                        light.AddComponent<Light>();
+                        light.light.color = Color.white;
+                        light.transform.position = new Vector3(x,1,y);
+
+                        cube.renderer.material.mainTexture = textures[2];
+                        movingTiles.Add(cube);
                         break;
                     default:
-                        cube.renderer.sharedMaterial.mainTexture = Resources.Load("Textures/Ground") as Texture;
+                        cube.renderer.sharedMaterial.mainTexture = textures[0];
                         break;
                 }
+
 
 
                 cube.gameObject.transform.position = new Vector3(x, 0, y);
@@ -70,9 +112,64 @@ public class GUI_Map3D : MonoBehaviour
         cubes.Clear();
 
 
-        /*
-
         // Build Rock Tiles
+        for (int y = 0; y < map.GetLength(1); y++)
+        {
+            for (int x = 0; x < map.GetLength(0); x++)
+            {
+
+                if (!map[x, y].rock.Equals(rockType.EMPTY) && 
+                    !map[x, y].rock.Equals(rockType.LAVA) && 
+                    !map[x, y].rock.Equals(rockType.WATER))
+                {
+
+                    cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    cube.tag = "Rock";
+                    cube.transform.name = x + "," + y;
+
+
+
+                    if (map[x, y].rock == rockType.RUBBLE)
+                    {
+                        cube.renderer.material.mainTexture = textures[3];
+                        cube.gameObject.transform.position = new Vector3(x, 0.01f, y);
+                    }
+                    else if (map[x, y].rock == rockType.LOOSE)
+                    {
+                        cube.renderer.material.mainTexture = textures[4];
+                        cube.gameObject.transform.position = new Vector3(x, 1, y);
+                    }
+                    else if (map[x, y].rock == rockType.HARD)
+                    {
+                        cube.renderer.material.mainTexture = textures[7];
+                        cube.gameObject.transform.position = new Vector3(x, 1, y);
+                    }
+                    else if (map[x, y].rock == rockType.SOLID)
+                    {
+                        cube.renderer.material.mainTexture = textures[8];
+                        cube.gameObject.transform.position = new Vector3(x, 1, y);
+                    }
+
+                    cube.transform.parent = mapBase.transform;
+                    cubes.Add(cube);
+
+                    con.map.grid[x, y].g = cube;
+
+                }
+
+            }
+
+        }
+
+        /////////////////// BATCHES BUT DOESNT SAVE DRAW CALLS, FIX LATER FOR PERFORMANCE BOOST ////////////////////
+        // batch ground tiles into single mesh
+        StaticBatchingUtility.Combine(cubes.ToArray(), mapBase);
+        cubes.Clear();
+
+
+        /*
+        ///////////////////     BROKEN       ////////////////////////////
+        // Build Rock Tiles with proper geometry and direction
         for (int y = 0; y < map.GetLength(1); y++)
         {
             for (int x = 0; x < map.GetLength(0); x++)
@@ -261,6 +358,30 @@ public class GUI_Map3D : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        DynamicMaterialsUpdate();
+
+    }
+
+    /*
+     * Make Water and Lava shift texture corrdinates to make an illusion of movement
+     */
+    private void DynamicMaterialsUpdate()
+    {
+
+        // offset each texture in moving tiles
+        foreach (GameObject g in movingTiles)
+        {
+            //get current offset
+            curOffset = g.transform.renderer.material.GetTextureOffset("_MainTex");
+
+            //set new offset
+            g.transform.renderer.material.SetTextureOffset("_MainTex", new Vector2(curOffset.x + 0.1f * Time.deltaTime, curOffset.y + 0.1f * Time.deltaTime));
+
+            //set new scale
+            g.transform.renderer.material.SetTextureScale("_MainTex", new Vector2(0.7f + Mathf.PingPong(Time.time, 0.3f) * 0.01f, 0.7f + Mathf.PingPong(Time.time, 0.3f) * 0.01f));
+
+        }
 
     }
 }

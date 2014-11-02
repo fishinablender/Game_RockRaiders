@@ -7,7 +7,7 @@ public class Controller : MonoBehaviour
 {
 
     // MAP
-    public Map map;// = new Map();
+    public Map map;
 
     // Buildings
     public List<Building> buildings;
@@ -32,7 +32,7 @@ public class Controller : MonoBehaviour
     public GUI_Map3D guiMap3D;
 
     // User input
-
+    public UserInput userInput;
 
     // Constructor
     public Controller()
@@ -64,7 +64,7 @@ public class Controller : MonoBehaviour
 
     void Setup()
     {
-
+        map = new Map(new Point(20, 20));
         buildings = new List<Building>();
         npcs = new List<NPC>();
         enimies = new List<NPC>();
@@ -77,6 +77,9 @@ public class Controller : MonoBehaviour
         guiToolbar = gameObject.AddComponent<GUI_Toolbar>();
         guiViewControls = gameObject.AddComponent<GUI_ViewControls>();
         guiMap3D = gameObject.AddComponent<GUI_Map3D>();
+
+        // Input
+        userInput = gameObject.AddComponent<UserInput>();
 
     }
 }

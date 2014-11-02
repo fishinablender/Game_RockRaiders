@@ -24,7 +24,7 @@ public class Test : MonoBehaviour {
     {
         con = gameObject.AddComponent<Controller>();
 
-        con.map = new Map(new Point(20, 20));
+        //con.map = new Map(new Point(20, 20));
         con.map.ClearMap();
         con.map.AddSolidRockBoarder();
 
@@ -40,6 +40,13 @@ public class Test : MonoBehaviour {
 
         con.map.grid[7, 3].rock = rockType.LAVA;
         con.map.grid[8, 3].rock = rockType.LAVA;
+        con.map.grid[9, 3].rock = rockType.LAVA;
+        con.map.grid[8, 4].rock = rockType.LAVA;
+        con.map.grid[7, 2].rock = rockType.LAVA;
+        con.map.grid[8, 2].rock = rockType.LAVA;
+        con.map.grid[9, 2].rock = rockType.LAVA;
+        con.map.grid[10, 2].rock = rockType.LAVA;
+        con.map.grid[9, 4].rock = rockType.LAVA;
 
         con.map.AddBuilding(new Point(6, 5), Building.buildings.PAD);
 
@@ -55,6 +62,8 @@ public class Test : MonoBehaviour {
 	void OnGUI(){
 
         //TempMapGui();
+
+        GUI.Label(new Rect(0, 0, 500, 100), "  v0.0.1 Pre-Alpha ");
 
 	}
 

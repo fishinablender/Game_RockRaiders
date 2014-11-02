@@ -326,6 +326,7 @@ public class MapSpace
     public Point coordinates;
     public rockType rock;
     public List<itemType> items;
+    public GameObject g;
 
     public MapSpace(Point c, rockType r)
     {
